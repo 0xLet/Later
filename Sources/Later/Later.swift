@@ -1,4 +1,5 @@
 import NIO
+import Foundation
 
 public class Later {
     public static var `default`: Later = Later()
@@ -34,7 +35,9 @@ public extension EventLoop {
     func promise<Void>(work: @escaping (EventLoopPromise<Void>) -> Void) -> EventLoopFuture<Void> {
         let promise = makePromise(of: Void.self)
         
-        work(promise)
+        DispatchQueue.global().async {
+            work(promise)
+        }
         
         return promise.futureResult
     }
