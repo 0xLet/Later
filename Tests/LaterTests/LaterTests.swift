@@ -5,8 +5,7 @@ import NIO
 
 final class LaterTests: XCTestCase {
 func testExample() {
-    var bag = [EventLoopFuture<Void>]()
-    var sema = DispatchSemaphore(value: 0)
+    let sema = DispatchSemaphore(value: 0)
     
     print("System cores: \(System.coreCount)")
     let group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
@@ -28,16 +27,12 @@ func testExample() {
         print("Error: \(error)")
     }
     
-//    Later.default.store(future: promise)
-    
     var spam = true
     
     let result = ev.do(withDelay: 5) {
         spam = false
         print("Hello World!")
     }
-    
-    bag.append(result)
     
     print("First")
     

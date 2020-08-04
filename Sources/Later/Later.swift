@@ -1,6 +1,9 @@
 import NIO
 import Foundation
 
+public typealias LaterValue = EventLoopFuture
+public typealias LaterPromise = EventLoopPromise
+
 public class Later {
     private let group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
     private lazy var ev = group.next()
@@ -10,16 +13,16 @@ public class Later {
 
 public extension Later {
     func `do`(withDelay delay: UInt32 = 0,
-              work: @escaping () -> Void) -> EventLoopFuture<Void> {
+              work: @escaping () -> Void) -> LaterValue<Void> {
         ev.do(withDelay: delay,
               work: work)
     }
     
-    func promise<T>(work: @escaping (EventLoopPromise<T>) -> Void) -> EventLoopFuture<T> {
+    func promise<T>(work: @escaping (LaterPromise<T>) -> Void) -> LaterValue<T> {
         ev.promise(work: work)
     }
     
-    func promise(work: @escaping (EventLoopPromise<Void>) -> Void) -> EventLoopFuture<Void> {
+    func promise(work: @escaping (LaterPromise<Void>) -> Void) -> LaterValue<Void> {
         ev.promise(work: work)
     }
 }
