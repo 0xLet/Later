@@ -2,12 +2,25 @@ import NIO
 import Foundation
 
 public class Later {
+    private let group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
+    private lazy var ev = group.next()
+    
     public static var `default`: Later = Later()
+}
+
+public extension Later {
+    func `do`(withDelay delay: UInt32 = 0,
+              work: @escaping () -> Void) -> EventLoopFuture<Void> {
+        ev.do(withDelay: delay,
+              work: work)
+    }
     
-    private var futures: [EventLoopFuture<Any>] = []
+    func promise<T>(work: @escaping (EventLoopPromise<T>) -> Void) -> EventLoopFuture<T> {
+        ev.promise(work: work)
+    }
     
-    public func store(future: EventLoopFuture<Any>) {
-        futures.append(future)
+    func promise(work: @escaping (EventLoopPromise<Void>) -> Void) -> EventLoopFuture<Void> {
+        ev.promise(work: work)
     }
 }
 
@@ -27,13 +40,6 @@ public extension EventLoop {
     func promise<T>(work: @escaping (EventLoopPromise<T>) -> Void) -> EventLoopFuture<T> {
         let promise = makePromise(of: T.self)
         
-        work(promise)
-        
-        return promise.futureResult
-    }
-    
-    func promise<Void>(work: @escaping (EventLoopPromise<Void>) -> Void) -> EventLoopFuture<Void> {
-        let promise = makePromise(of: Void.self)
         
         DispatchQueue.global().async {
             work(promise)
@@ -41,11 +47,14 @@ public extension EventLoop {
         
         return promise.futureResult
     }
-}
- 
-
-public extension EventLoopFuture {
-    func store() {
-//        Later.default.store(future: self)
+    
+    func promise(work: @escaping (EventLoopPromise<Void>) -> Void) -> EventLoopFuture<Void> {
+        let promise = makePromise(of: Void.self)
+        
+        DispatchQueue.global().async {
+            let _ = work(promise)
+        }
+        
+        return promise.futureResult
     }
 }
