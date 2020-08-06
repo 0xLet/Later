@@ -2,6 +2,19 @@ import Foundation
 import NIO
 
 public extension EventLoop {
+    @discardableResult
+    func `do`<T>(withDelay delay: UInt32 = 0,
+              work: @escaping () -> T) -> EventLoopFuture<T> {
+        promise { (promise) in
+            DispatchQueue.global().async {
+                sleep(delay)
+                let data = work()
+                promise.succeed(data)
+            }
+        }
+    }
+    
+    @discardableResult
     func `do`(withDelay delay: UInt32 = 0,
               work: @escaping () -> Void) -> EventLoopFuture<Void> {
         
@@ -16,6 +29,7 @@ public extension EventLoop {
         return promise
     }
     
+    @discardableResult
     func promise<T>(work: @escaping (EventLoopPromise<T>) -> Void) -> EventLoopFuture<T> {
         let promise = makePromise(of: T.self)
         
@@ -27,6 +41,7 @@ public extension EventLoop {
         return promise.futureResult
     }
     
+    @discardableResult
     func promise(work: @escaping (EventLoopPromise<Void>) -> Void) -> EventLoopFuture<Void> {
         let promise = makePromise(of: Void.self)
         

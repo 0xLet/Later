@@ -55,6 +55,12 @@ func testExample() {
     func testFetch() {
         let sema = DispatchSemaphore(value: 0)
         
+        Later.do(withDelay: 2) {
+            Later.fetch(url: URL(string: "https://avatars0.githubusercontent.com/u/10639145?s=200&v=4")!, work:  { (data, response, error) in
+                print(data)
+            })
+        }
+        
         var spam = true
         
         Later.do(withDelay: 5) {
@@ -82,8 +88,76 @@ func testExample() {
         sema.wait()
     }
     
+    func testDo() {
+        Later.do(withDelay: 2) {
+            "Hello World"
+        }
+        .whenSuccess {
+            print($0)
+        }
+        
+        sleep(3)
+        
+        print("end")
+    }
+    
+    func test100Do() {
+        let sema = DispatchSemaphore(value: 0)
+        
+        var count = 0
+        var maxCount = 0
+        
+        let start = Date().timeIntervalSince1970
+        for i in 0 ..< 100 {
+            if count > maxCount {
+                maxCount = count
+            }
+            Later.do {
+                count += 1
+                sleep(3)
+                count -= 1
+                if i == 99 {
+                    sema.signal()
+                }
+            }
+        }
+        sema.wait()
+        let end = Date().timeIntervalSince1970
+        
+        print(maxCount)
+        print(end - start)
+    }
+    
+    func test1000Do() {
+        let sema = DispatchSemaphore(value: 0)
+        
+        var count = 0
+        var maxCount = 0
+        
+        let start = Date().timeIntervalSince1970
+        for i in 0 ..< 1000 {
+            if count > maxCount {
+                maxCount = count
+            }
+            Later.do {
+                count += 1
+                sleep(3)
+                count -= 1
+                if i == 999 {
+                    sema.signal()
+                }
+            }
+        }
+        sema.wait()
+        let end = Date().timeIntervalSince1970
+        
+        print(maxCount)
+        print(end - start) // 1000 / 80 * 3 ~= 37.5
+    }
+    
     static var allTests = [
         ("testExample", testExample),
-        ("testFetch", testFetch)
+        ("testFetch", testFetch),
+        ("testDo", testDo)
     ]
 }

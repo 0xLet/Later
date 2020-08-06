@@ -12,24 +12,79 @@ public class Later {
 }
 
 public extension Later {
-    static func fetch(url: URL,
-               work: @escaping (Data?, URLResponse?, Error?) -> Void) -> LaterValue<Void> {
-        Later.default.ev.do {
-            URLSession.shared.dataTask(with: url, completionHandler: work).resume()
+    @discardableResult
+    static func fetch(url: URL) -> LaterValue<(Data?, URLResponse?, Error?)> {
+        Later.default.ev
+            .promise { promise in
+                URLSession.shared
+                    .dataTask(with: url) { (data, response, error) in
+                        promise.succeed((data, response, error))
+                    }
+                    .resume()
         }
     }
     
+    @discardableResult
+    static func fetch(url: URL,
+                      work: @escaping (Data?, URLResponse?, Error?) -> Void) -> LaterValue<Void> {
+        Later.default.ev
+            .do {
+                URLSession.shared
+                    .dataTask(with: url,
+                              completionHandler: work)
+                    .resume()
+        }
+    }
+    
+    @discardableResult
+    static func fetch(url: URL,
+                      errorHandler: ((Error) -> Void)? = nil,
+                      responseHandler: ((URLResponse) -> Void)? = nil,
+                      dataHandler: ((Data) -> Void)? = nil) -> LaterValue<Void> {
+        fetch(url: url) { (data, response, error) in
+            if let error = error {
+                errorHandler?(error)
+            }
+            
+            guard let response = response else {
+                return
+            }
+            
+            responseHandler?(response)
+            
+            guard let data = data else {
+                return
+            }
+            
+            dataHandler?(data)
+        }
+    }
+    
+    @discardableResult
+    static func `do`<T>(withDelay delay: UInt32 = 0,
+                     work: @escaping () -> T) -> LaterValue<T> {
+        Later.default.ev
+            .do(withDelay: delay,
+                work: work)
+    }
+    
+    @discardableResult
     static func `do`(withDelay delay: UInt32 = 0,
-              work: @escaping () -> Void) -> LaterValue<Void> {
-        Later.default.ev.do(withDelay: delay,
-              work: work)
+                     work: @escaping () -> Void) -> LaterValue<Void> {
+        Later.default.ev
+            .do(withDelay: delay,
+                work: work)
     }
     
+    @discardableResult
     static func promise<T>(work: @escaping (LaterPromise<T>) -> Void) -> LaterValue<T> {
-        Later.default.ev.promise(work: work)
+        Later.default.ev
+            .promise(work: work)
     }
     
+    @discardableResult
     static func promise(work: @escaping (LaterPromise<Void>) -> Void) -> LaterValue<Void> {
-        Later.default.ev.promise(work: work)
+        Later.default.ev
+            .promise(work: work)
     }
 }
