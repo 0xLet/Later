@@ -1,63 +1,35 @@
-import NIO
 import Foundation
+import NIO
 
 public typealias LaterValue = EventLoopFuture
 public typealias LaterPromise = EventLoopPromise
 
 public class Later {
+    fileprivate static var `default`: Later = Later()
+    
     private let group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
     private lazy var ev = group.next()
-    
-    public static var `default`: Later = Later()
 }
 
 public extension Later {
-    func `do`(withDelay delay: UInt32 = 0,
+    static func fetch(url: URL,
+               work: @escaping (Data?, URLResponse?, Error?) -> Void) -> LaterValue<Void> {
+        Later.default.ev.do {
+            URLSession.shared.dataTask(with: url, completionHandler: work).resume()
+        }
+    }
+    
+    static func `do`(withDelay delay: UInt32 = 0,
               work: @escaping () -> Void) -> LaterValue<Void> {
-        ev.do(withDelay: delay,
+        Later.default.ev.do(withDelay: delay,
               work: work)
     }
     
-    func promise<T>(work: @escaping (LaterPromise<T>) -> Void) -> LaterValue<T> {
-        ev.promise(work: work)
+    static func promise<T>(work: @escaping (LaterPromise<T>) -> Void) -> LaterValue<T> {
+        Later.default.ev.promise(work: work)
     }
     
-    func promise(work: @escaping (LaterPromise<Void>) -> Void) -> LaterValue<Void> {
-        ev.promise(work: work)
-    }
-}
-
-public extension EventLoop {
-    func `do`(withDelay delay: UInt32 = 0,
-              work: @escaping () -> Void) -> EventLoopFuture<Void> {
-        
-        let promise = submit {
-            sleep(delay)
-            work()
-            return
-        }
-        
-        return promise
-    }
-    
-    func promise<T>(work: @escaping (EventLoopPromise<T>) -> Void) -> EventLoopFuture<T> {
-        let promise = makePromise(of: T.self)
-        
-        
-        DispatchQueue.global().async {
-            work(promise)
-        }
-        
-        return promise.futureResult
-    }
-    
-    func promise(work: @escaping (EventLoopPromise<Void>) -> Void) -> EventLoopFuture<Void> {
-        let promise = makePromise(of: Void.self)
-        
-        DispatchQueue.global().async {
-            let _ = work(promise)
-        }
-        
-        return promise.futureResult
+    static func promise(work: @escaping (LaterPromise<Void>) -> Void) -> LaterValue<Void> {
+        Later.default.ev.promise(work: work)
     }
 }
