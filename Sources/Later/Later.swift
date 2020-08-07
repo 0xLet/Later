@@ -12,6 +12,23 @@ public class Later {
 }
 
 public extension Later {
+    static func post(url: URL, withData data: () -> Data) -> LaterValue<(Data?, URLResponse?, Error?)> {
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.httpBody = data()
+        request.allHTTPHeaderFields = [
+            "Content-Type": "application/json; charset=utf-8"
+        ]
+        
+        return Later.default.ev.promise { promise in
+            URLSession.shared
+                .dataTask(with: request) { (data, response, error) in
+                    promise.succeed((data, response, error))
+            }
+            .resume()
+        }
+    }
+    
     @discardableResult
     static func fetch(url: URL) -> LaterValue<(Data?, URLResponse?, Error?)> {
         Later.default.ev
@@ -19,8 +36,8 @@ public extension Later {
                 URLSession.shared
                     .dataTask(with: url) { (data, response, error) in
                         promise.succeed((data, response, error))
-                    }
-                    .resume()
+                }
+                .resume()
         }
     }
     
@@ -62,7 +79,7 @@ public extension Later {
     
     @discardableResult
     static func `do`<T>(withDelay delay: UInt32 = 0,
-                     work: @escaping () -> T) -> LaterValue<T> {
+                        work: @escaping () -> T) -> LaterValue<T> {
         Later.default.ev
             .do(withDelay: delay,
                 work: work)

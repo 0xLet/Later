@@ -54,6 +54,16 @@ final class LaterTests: XCTestCase {
     func testFetch() {
         let sema = DispatchSemaphore(value: 0)
         
+        Later.post(url: URL(string: "https://postman-echo.com/post")!) {
+            "Some Data".data(using: .utf8)!
+        }
+        .whenSuccess { (data, reponse, _) in
+            print("POST")
+            print(String(data: data!, encoding: .utf8) ?? "-1")
+            print(reponse)
+            print("END")
+        }
+        
         Later.do(withDelay: 2) {
             Later.fetch(url: URL(string: "https://avatars0.githubusercontent.com/u/10639145?s=200&v=4")!, work:  { (data, response, error) in
                 print(data)
