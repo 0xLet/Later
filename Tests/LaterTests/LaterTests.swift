@@ -13,7 +13,6 @@ final class LaterTests: XCTestCase {
         
         let promise = ev.promise { (promise) in
             sleep(10)
-            print("PROMISE!")
             sema.signal()
             promise.succeed(())
         }
