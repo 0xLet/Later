@@ -5,7 +5,7 @@ public extension EventLoop {
     @discardableResult
     func `do`<T>(withDelay delay: UInt32 = 0,
               work: @escaping () -> T) -> EventLoopFuture<T> {
-        promise { (promise) in
+        promise { promise in
             DispatchQueue.global().async {
                 sleep(delay)
                 let data = work()
@@ -17,16 +17,13 @@ public extension EventLoop {
     @discardableResult
     func `do`(withDelay delay: UInt32 = 0,
               work: @escaping () -> Void) -> EventLoopFuture<Void> {
-        
-        let promise = submit {
+        promise { promise in
             DispatchQueue.global().async {
                 sleep(delay)
                 work()
+                promise.succeed(())
             }
-            return
         }
-        
-        return promise
     }
     
     @discardableResult
