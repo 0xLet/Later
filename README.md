@@ -36,6 +36,20 @@ promise<T>(work: @escaping (LaterPromise<T>) -> Void) -> LaterValue<T>
 promise(work: @escaping (LaterPromise<Void>) -> Void) -> LaterValue<Void>
 ```
 
+#### main
+
+```swift
+main(withDelay delay: UInt32 = 0,
+     work: @escaping () -> Void) -> LaterValue<Void>
+```
+
+## LaterValue
+
+```swift
+and: Later.Type { Later.self }
+when(value: @escaping (LaterValue<Value>) -> Void) -> Later.Type
+```
+
 ****
 
 ## Examples
@@ -78,6 +92,33 @@ promise.whenFailure { error in
 }
 ```
 
+#### main
+```swift
+Later.main { 
+    self.value = "Fetching Again..." 
+}
+```
+
+#### and
+```swift
+Later
+    .do { print("Do Something") }
+    .and
+    .do { print("Do Something Else") }
+```
+
+#### when
+```swift
+Later
+    .do { print("Do First") }
+    .when { event in
+        event
+            .whenComplete { _ in
+                print("Do Last")
+        }
+    }
+    .do { print("Do Something Else") }
+```
 
 ### promise + fetch
 ```swift
