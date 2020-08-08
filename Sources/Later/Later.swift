@@ -20,7 +20,7 @@ public extension LaterValue {
 }
 
 public class Later {
-    fileprivate static var `default`: Later = Later()
+    private static var `default`: Later = Later()
     
     private let group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
     private lazy var ev = group.next()
