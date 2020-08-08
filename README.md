@@ -28,6 +28,13 @@ fetch(url: URL,
       dataHandler: ((Data) -> Void)? = nil) -> LaterValue<Void>
 ```
 
+#### post
+
+```swift
+/// ["Content-Type": "application/json; charset=utf-8"]
+post(url: URL, withData data: () -> Data) -> LaterValue<(Data?, URLResponse?, Error?)>
+```
+
 #### promise
 
 ```swift
@@ -57,7 +64,7 @@ when(value: @escaping (LaterValue<Value>) -> Void) -> Later.Type
 #### do
 ```swift
 Later.do(withDelay: 2) {
-    DispatchQueue.main.async {
+    Later.main {
         label.text = "Later!"
     }
 }
@@ -72,6 +79,20 @@ Later.fetch(url: URL(string: "https://jsonplaceholder.typicode.com/todos/1")!)
     }
     
     self.value = String(data: data, encoding: .utf8) ?? "-1"
+}
+```
+
+#### post
+```swift
+Later.post(url: URL(string: "https://postman-echo.com/post")!) {
+    "Some Data".data(using: .utf8)!
+}
+.when { event in
+    event
+        .whenSuccess { (data, reponse, _) in
+            print(String(data: data!, encoding: .utf8) ?? "-1")
+            print(reponse)
+    }
 }
 ```
 
