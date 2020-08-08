@@ -4,6 +4,21 @@ import NIO
 public typealias LaterValue = EventLoopFuture
 public typealias LaterPromise = EventLoopPromise
 
+public extension LaterValue {
+    var then: Later.Type {
+        Later.self
+    }
+    
+    @discardableResult
+    func when(value: @escaping (LaterValue<Value>) -> Void) -> Later.Type {
+        let _ = whenComplete { _ in
+            value(self)
+        }
+        
+        return Later.self
+    }
+}
+
 public class Later {
     fileprivate static var `default`: Later = Later()
     
@@ -103,5 +118,17 @@ public extension Later {
     static func promise(work: @escaping (LaterPromise<Void>) -> Void) -> LaterValue<Void> {
         Later.default.ev
             .promise(work: work)
+    }
+}
+
+public extension Later {
+    @discardableResult
+    static func main(withDelay delay: UInt32 = 0,
+                     work: @escaping () -> Void) -> LaterValue<Void> {
+        Later.do(withDelay: delay) {
+            DispatchQueue.main.async {
+                work()
+            }
+        }
     }
 }
