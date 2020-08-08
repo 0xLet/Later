@@ -208,7 +208,7 @@ final class LaterTests: XCTestCase {
         .do {
             order.append(0)
         }
-        .then
+        .and
         .do(withDelay: 1) {
             order.append(1)
         }

@@ -5,7 +5,7 @@ public typealias LaterValue = EventLoopFuture
 public typealias LaterPromise = EventLoopPromise
 
 public extension LaterValue {
-    var then: Later.Type {
+    var and: Later.Type {
         Later.self
     }
     
