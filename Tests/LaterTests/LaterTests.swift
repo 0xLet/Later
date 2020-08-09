@@ -221,14 +221,17 @@ final class LaterTests: XCTestCase {
         var count = 0
         let sema = DispatchSemaphore(value: 0)
         
-        Later.schedule { (task) in
-            if count == 5 {
-                sema.signal()
+        Later.scheduleRepeatedTask(initialDelay: .seconds(0),
+                       delay: .seconds(1)) { (task) in
+            Later.do(withDelay: 4) {
                 task.cancel()
+                sema.signal()
             }
             count += 1
         }
-        
+        Later.scheduleTask(in: .seconds(3)) {
+            count += 1
+        }
         sema.wait()
         
         XCTAssertEqual(count, 5)

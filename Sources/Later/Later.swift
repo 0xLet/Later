@@ -5,6 +5,8 @@ import NIO
 
 public typealias LaterValue = EventLoopFuture
 public typealias LaterPromise = EventLoopPromise
+public typealias RepeatedScheduledTask = RepeatedTask
+public typealias ScheduledTask = Scheduled
 
 // MARK: LaterValue
 
@@ -76,7 +78,6 @@ public extension Later {
             .do(withDelay: delay,
                 work: work)
     }
-    
 }
 
 // MARK: main
@@ -98,14 +99,21 @@ public extension Later {
 
 public extension Later {
     @discardableResult
-    static func schedule(withInitialDelay initialDelay: TimeAmount = TimeAmount.seconds(0),
-                         delay: TimeAmount = TimeAmount.seconds(0),
-                         work: @escaping (RepeatedTask) -> Void) -> RepeatedTask {
+    static func scheduleRepeatedTask(initialDelay: TimeAmount = TimeAmount.seconds(0),
+                                     delay: TimeAmount = TimeAmount.seconds(0),
+                                     work: @escaping (RepeatedScheduledTask) -> Void) -> RepeatedScheduledTask {
         Later.default.ev
             .scheduleRepeatedTask(initialDelay: initialDelay,
                                   delay: delay) { (task) in
                                     work(task)
         }
+    }
+    
+    @discardableResult
+    static func scheduleTask(in time: TimeAmount = TimeAmount.seconds(0),
+                             work: @escaping () -> Void) -> ScheduledTask<Void> {
+        Later.default.ev.scheduleTask(in: time, work)
+        
     }
 }
 
