@@ -217,6 +217,23 @@ final class LaterTests: XCTestCase {
         XCTAssertEqual(order, correctOrder)
     }
     
+    func testSchedule() {
+        var count = 0
+        let sema = DispatchSemaphore(value: 0)
+        
+        Later.schedule { (task) in
+            if count == 5 {
+                sema.signal()
+                task.cancel()
+            }
+            count += 1
+        }
+        
+        sema.wait()
+        
+        XCTAssertEqual(count, 5)
+    }
+    
     static var allTests = [
         ("testExample", testExample),
         ("testFetch", testFetch),

@@ -1,8 +1,12 @@
 import Foundation
 import NIO
 
+// MARK: typealiases
+
 public typealias LaterValue = EventLoopFuture
 public typealias LaterPromise = EventLoopPromise
+
+// MARK: LaterValue
 
 public extension LaterValue {
     var and: Later.Type {
@@ -19,12 +23,93 @@ public extension LaterValue {
     }
 }
 
+// MARK: Later
+
 public class Later {
+    deinit {
+        do {
+            try group.syncShutdownGracefully()
+        } catch {
+            print("Later: \(error.localizedDescription)")
+        }
+    }
+    
     private static var `default`: Later = Later()
     
     private let group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
-    private lazy var ev = group.next()
+    private var ev: EventLoop {
+        group.next()
+    }
 }
+
+// MARK: promise
+
+public extension Later {
+    @discardableResult
+    static func promise<T>(work: @escaping (LaterPromise<T>) -> Void) -> LaterValue<T> {
+        Later.default.ev
+            .promise(work: work)
+    }
+    
+    @discardableResult
+    static func promise(work: @escaping (LaterPromise<Void>) -> Void) -> LaterValue<Void> {
+        Later.default.ev
+            .promise(work: work)
+    }
+}
+
+// MARK: do
+
+public extension Later {
+    @discardableResult
+    static func `do`<T>(withDelay delay: UInt32 = 0,
+                        work: @escaping () -> T) -> LaterValue<T> {
+        Later.default.ev
+            .do(withDelay: delay,
+                work: work)
+    }
+    
+    @discardableResult
+    static func `do`(withDelay delay: UInt32 = 0,
+                     work: @escaping () -> Void) -> LaterValue<Void> {
+        Later.default.ev
+            .do(withDelay: delay,
+                work: work)
+    }
+    
+}
+
+// MARK: main
+
+public extension Later {
+    @discardableResult
+    static func main(withDelay delay: UInt32 = 0,
+                     work: @escaping () -> Void) -> LaterValue<Void> {
+        Later.do(withDelay: delay) {
+            DispatchQueue.main.async {
+                work()
+            }
+        }
+    }
+}
+
+
+// MARK: schedule
+
+public extension Later {
+    @discardableResult
+    static func schedule(withInitialDelay initialDelay: TimeAmount = TimeAmount.seconds(0),
+                         delay: TimeAmount = TimeAmount.seconds(0),
+                         work: @escaping (RepeatedTask) -> Void) -> RepeatedTask {
+        Later.default.ev
+            .scheduleRepeatedTask(initialDelay: initialDelay,
+                                  delay: delay) { (task) in
+                                    work(task)
+        }
+    }
+}
+
+// MARK: post
 
 public extension Later {
     static func post(url: URL, withData data: () -> Data) -> LaterValue<(Data?, URLResponse?, Error?)> {
@@ -43,7 +128,11 @@ public extension Later {
             .resume()
         }
     }
-    
+}
+
+// MARK: fetch
+
+public extension Later {
     @discardableResult
     static func fetch(url: URL) -> LaterValue<(Data?, URLResponse?, Error?)> {
         Later.default.ev
@@ -89,46 +178,6 @@ public extension Later {
             }
             
             dataHandler?(data)
-        }
-    }
-    
-    @discardableResult
-    static func `do`<T>(withDelay delay: UInt32 = 0,
-                        work: @escaping () -> T) -> LaterValue<T> {
-        Later.default.ev
-            .do(withDelay: delay,
-                work: work)
-    }
-    
-    @discardableResult
-    static func `do`(withDelay delay: UInt32 = 0,
-                     work: @escaping () -> Void) -> LaterValue<Void> {
-        Later.default.ev
-            .do(withDelay: delay,
-                work: work)
-    }
-    
-    @discardableResult
-    static func promise<T>(work: @escaping (LaterPromise<T>) -> Void) -> LaterValue<T> {
-        Later.default.ev
-            .promise(work: work)
-    }
-    
-    @discardableResult
-    static func promise(work: @escaping (LaterPromise<Void>) -> Void) -> LaterValue<Void> {
-        Later.default.ev
-            .promise(work: work)
-    }
-}
-
-public extension Later {
-    @discardableResult
-    static func main(withDelay delay: UInt32 = 0,
-                     work: @escaping () -> Void) -> LaterValue<Void> {
-        Later.do(withDelay: delay) {
-            DispatchQueue.main.async {
-                work()
-            }
         }
     }
 }
