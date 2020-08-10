@@ -243,6 +243,7 @@ final class LaterTests: XCTestCase {
         ("testDo", testDo),
         ("test100Do", test100Do),
         ("test1000Do", test1000Do),
-        ("testWhen", testWhen)
+        ("testWhen", testWhen),
+        ("testSchedule", testSchedule)
     ]
 }

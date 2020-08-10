@@ -4,9 +4,23 @@ Promise and do work later.
 
 ## [Swift-NIO EventLoops](https://github.com/apple/swift-nio#eventloops-and-eventloopgroups)
 
-
+## typealiases
+```swift
+public typealias LaterValue = EventLoopFuture
+public typealias LaterPromise = EventLoopPromise
+public typealias RepeatedScheduledTask = RepeatedTask
+public typealias ScheduledTask = Scheduled
+```
 
 ## Later.Methods
+
+#### promise
+
+```swift
+promise<T>(work: @escaping (LaterPromise<T>) -> Void) -> LaterValue<T>
+    
+promise(work: @escaping (LaterPromise<Void>) -> Void) -> LaterValue<Void>
+```
 
 #### do
 
@@ -16,6 +30,24 @@ do<T>(withDelay delay: UInt32 = 0,
 
 do(withDelay delay: UInt32 = 0,
    work: @escaping () -> Void) -> LaterValue<Void>
+```
+
+#### schedule
+
+```swift
+scheduleRepeatedTask(initialDelay: TimeAmount = TimeAmount.seconds(0),
+                    delay: TimeAmount = TimeAmount.seconds(0),
+                    work: @escaping (RepeatedScheduledTask) -> Void) -> RepeatedScheduledTask
+                    
+scheduleTask(in time: TimeAmount = TimeAmount.seconds(0),
+            work: @escaping () -> Void) -> ScheduledTask<Void>
+```
+
+#### main
+
+```swift
+main(withDelay delay: UInt32 = 0,
+     work: @escaping () -> Void) -> LaterValue<Void>
 ```
 
 #### fetch
@@ -39,21 +71,6 @@ fetch(url: URL,
 post(url: URL, withData data: () -> Data) -> LaterValue<(Data?, URLResponse?, Error?)>
 ```
 
-#### promise
-
-```swift
-promise<T>(work: @escaping (LaterPromise<T>) -> Void) -> LaterValue<T>
-    
-promise(work: @escaping (LaterPromise<Void>) -> Void) -> LaterValue<Void>
-```
-
-#### main
-
-```swift
-main(withDelay delay: UInt32 = 0,
-     work: @escaping () -> Void) -> LaterValue<Void>
-```
-
 ## LaterValue
 
 ```swift
@@ -65,12 +82,46 @@ when(value: @escaping (LaterValue<Value>) -> Void) -> Later.Type
 
 ## Examples
 
+#### promise
+```swift
+let promise = Later.promise { (promise) in
+    sleep(10)
+    promise.succeed(())
+}
+
+promise.whenSuccess { page in
+    print("Page received")
+}
+
+promise.whenFailure { error in
+    print("Error: \(error)")
+}
+```
+
 #### do
 ```swift
 Later.do(withDelay: 2) {
-    Later.main {
-        label.text = "Later!"
-    }
+    work()
+}
+```
+
+#### schedule
+```swift
+let task = Later.scheduleRepeatedTask(initialDelay: .seconds(0),
+               delay: .seconds(1)) { (task) in
+               work()
+}
+
+Later.scheduleTask(in: .seconds(3)) {
+    task.cancel()
+}
+```
+
+#### main
+```swift
+Later.main { 
+    // Update UI
+    self.value = "Fetching Again..." 
 }
 ```
 
@@ -97,30 +148,6 @@ Later.post(url: URL(string: "https://postman-echo.com/post")!) {
             print(String(data: data!, encoding: .utf8) ?? "-1")
             print(reponse)
     }
-}
-```
-
-#### promise
-```swift
-let promise = Later.promise { (promise) in
-    sleep(10)
-    promise.succeed(())
-}
-
-promise.whenSuccess { page in
-    print("Page received")
-}
-
-
-promise.whenFailure { error in
-    print("Error: \(error)")
-}
-```
-
-#### main
-```swift
-Later.main { 
-    self.value = "Fetching Again..." 
 }
 ```
 
