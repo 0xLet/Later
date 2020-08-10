@@ -54,6 +54,21 @@ final class LaterTests: XCTestCase {
     func testFetch() {
         let sema = DispatchSemaphore(value: 0)
         
+        Later.post(url: URL(string: "https://postman-echo.com/post")!) {
+            "Some Data".data(using: .utf8)!
+        }
+        .when { (future) in
+            future
+                .whenSuccess { (data, reponse, _) in
+                    print("POST")
+                    print(String(data: data!, encoding: .utf8) ?? "-1")
+                    print(reponse)
+                    print("END")
+            }
+        }
+        
+        
+        
         Later.do(withDelay: 2) {
             Later.fetch(url: URL(string: "https://avatars0.githubusercontent.com/u/10639145?s=200&v=4")!, work:  { (data, response, error) in
                 print(data)
@@ -65,7 +80,13 @@ final class LaterTests: XCTestCase {
         Later.do(withDelay: 5) {
             spam = false
             print("Hello World!")
-            sema.signal()
+        }.when { (future) in
+            print("H")
+            future
+                .whenSuccess { _ in
+                    print("Said Hello World!")
+                    sema.signal()
+            }
         }
         
         print("First")
@@ -154,9 +175,75 @@ final class LaterTests: XCTestCase {
         print(end - start) // 1000 / 80 * 3 ~= 37.5
     }
     
+    func testWhen() {
+        let sema = DispatchSemaphore(value: 0)
+        let correctOrder = [0, 1, 2, 3, 4, 5]
+        var order: [Int] = []
+        
+        Later.do(withDelay: 3) {
+            Later.fetch(url: URL(string: "https://github.com/0xLeif/Later")!)
+                .when { event in
+                    event
+                        .whenSuccess { (data, response, error) in
+                            order.append(5)
+                            sema.signal()
+                    }
+            }
+        }
+        .when { event in
+            event
+                .whenComplete { _ in
+                    order.append(4)
+            }
+        }
+        .do(withDelay: 2) {
+            order.append(2)
+        }
+        .when { event in
+            event
+                .whenSuccess { _ in
+                    order.append(3)
+            }
+        }
+        .do {
+            order.append(0)
+        }
+        .and
+        .do(withDelay: 1) {
+            order.append(1)
+        }
+        
+        sema.wait()
+        XCTAssertEqual(order, correctOrder)
+    }
+    
+    func testSchedule() {
+        var count = 0
+        let sema = DispatchSemaphore(value: 0)
+        
+        Later.scheduleRepeatedTask(initialDelay: .seconds(0),
+                       delay: .seconds(1)) { (task) in
+            Later.do(withDelay: 4) {
+                task.cancel()
+                sema.signal()
+            }
+            count += 1
+        }
+        Later.scheduleTask(in: .seconds(3)) {
+            count += 1
+        }
+        sema.wait()
+        
+        XCTAssertEqual(count, 5)
+    }
+    
     static var allTests = [
         ("testExample", testExample),
         ("testFetch", testFetch),
-        ("testDo", testDo)
+        ("testDo", testDo),
+        ("test100Do", test100Do),
+        ("test1000Do", test1000Do),
+        ("testWhen", testWhen),
+        ("testSchedule", testSchedule)
     ]
 }
