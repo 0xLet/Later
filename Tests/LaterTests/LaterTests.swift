@@ -203,24 +203,53 @@ final class LaterTests: XCTestCase {
         XCTAssertEqual(order, correctOrder)
     }
     
-    func testSchedule() {
+    func testScheduleRepeatedTask() {
         var count = 0
         let sema = DispatchSemaphore(value: 0)
         
         Later.scheduleRepeatedTask(initialDelay: .seconds(0),
                                    delay: .seconds(1)) { (task) in
-                                    Later.do(withDelay: 4) {
+                                    guard count < 5 else {
                                         task.cancel()
                                         sema.signal()
+                                        return
                                     }
+                                    
                                     count += 1
-        }
-        Later.scheduleTask(in: .seconds(3)) {
-            count += 1
         }
         sema.wait()
         
         XCTAssertEqual(count, 5)
+    }
+    
+    func testScheduleTask() {
+        let sema = DispatchSemaphore(value: 0)
+        
+        Later.scheduleTask(in: .seconds(5)) {
+            XCTAssert(true)
+            sema.signal()
+        }
+        
+        sema.wait()
+    }
+    
+    func testScheduleTask_cancel() {
+        let sema = DispatchSemaphore(value: 0)
+        
+        let task = Later.scheduleTask(in: .seconds(5)) {
+            XCTAssert(false)
+        }
+        
+        Later.do(withDelay: 3) {
+            task.cancel()
+        }
+        
+        Later.scheduleTask(in: .seconds(8)) {
+            XCTAssert(true)
+            sema.signal()
+        }
+        
+        sema.wait()
     }
     
     static var allTests = [
@@ -232,6 +261,8 @@ final class LaterTests: XCTestCase {
         ("testPost_success", testPost_success),
         ("testPost_failure", testPost_failure),
         ("testWhen", testWhen),
-        ("testSchedule", testSchedule)
+        ("testScheduleRepeatedTask", testScheduleRepeatedTask),
+        ("testScheduleTask", testScheduleTask),
+        ("testScheduleTask_cancel", testScheduleTask_cancel)
     ]
 }
