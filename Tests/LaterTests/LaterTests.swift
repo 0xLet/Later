@@ -141,7 +141,7 @@ final class LaterTests: XCTestCase {
     func testPost_failure() {
         let sema = DispatchSemaphore(value: 0)
         
-        Later.post(url: URL(string: "localhost")!)
+        Later.post(url: URL(string: "https://github/0xLeif/Later")!)
             .when { (future) in
                 future
                     .whenFailure { (error) in
