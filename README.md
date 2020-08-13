@@ -26,10 +26,10 @@ promise(work: @escaping (LaterPromise<Void>) -> Void) -> LaterValue<Void>
 
 ```swift
 do<T>(withDelay delay: UInt32 = 0,
-      work: @escaping () -> T) -> LaterValue<T>
+      work: @escaping () throws -> T) -> LaterValue<T>
 
 do(withDelay delay: UInt32 = 0,
-   work: @escaping () -> Void) -> LaterValue<Void>
+   work: @escaping () throws -> Void) -> LaterValue<Void>
 ```
 
 #### schedule
@@ -47,7 +47,7 @@ scheduleTask(in time: TimeAmount = TimeAmount.seconds(0),
 
 ```swift
 main(withDelay delay: UInt32 = 0,
-     work: @escaping () -> Void) -> LaterValue<Void>
+     work: @escaping () throws -> Void) -> LaterValue<Void>
 ```
 
 #### fetch
