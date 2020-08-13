@@ -26,24 +26,32 @@ public extension EventLoop {
     
     @discardableResult
     func `do`<T>(withDelay delay: UInt32 = 0,
-              work: @escaping () -> T) -> EventLoopFuture<T> {
+              work: @escaping () throws -> T) -> EventLoopFuture<T> {
         promise { promise in
             DispatchQueue.global().async {
                 sleep(delay)
-                let data = work()
-                promise.succeed(data)
+                do {
+                    let data = try work()
+                    promise.succeed(data)
+                } catch {
+                    promise.fail(error)
+                }
             }
         }
     }
     
     @discardableResult
     func `do`(withDelay delay: UInt32 = 0,
-              work: @escaping () -> Void) -> EventLoopFuture<Void> {
+              work: @escaping () throws -> Void) -> EventLoopFuture<Void> {
         promise { promise in
             DispatchQueue.global().async {
                 sleep(delay)
-                work()
-                promise.succeed(())
+                do {
+                    try work()
+                    promise.succeed(())
+                } catch {
+                    promise.fail(error)
+                }
             }
         }
     }
