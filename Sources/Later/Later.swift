@@ -1,6 +1,10 @@
 import Foundation
 import NIO
 
+#if os(Linux)
+import FoundationNetworking
+#endif
+
 // MARK: typealiases
 
 public typealias LaterValue = EventLoopFuture
