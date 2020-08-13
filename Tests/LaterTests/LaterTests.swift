@@ -59,7 +59,12 @@ final class LaterTests: XCTestCase {
         }
         .when { (future) in
             future
-                .whenSuccess { (data, reponse, _) in
+                .whenFailure { (error) in
+                    print("Error 😬 \(error)")
+            }
+            
+            future
+                .whenSuccess { (data, reponse) in
                     print("POST")
                     print(String(data: data!, encoding: .utf8) ?? "-1")
                     print(reponse)
