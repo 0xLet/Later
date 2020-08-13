@@ -65,7 +65,7 @@ public extension Later {
 public extension Later {
     @discardableResult
     static func `do`<T>(withDelay delay: UInt32 = 0,
-                        work: @escaping () -> T) -> LaterValue<T> {
+                        work: @escaping () throws -> T) -> LaterValue<T> {
         Later.default.ev
             .do(withDelay: delay,
                 work: work)
@@ -73,7 +73,7 @@ public extension Later {
     
     @discardableResult
     static func `do`(withDelay delay: UInt32 = 0,
-                     work: @escaping () -> Void) -> LaterValue<Void> {
+                     work: @escaping () throws -> Void) -> LaterValue<Void> {
         Later.default.ev
             .do(withDelay: delay,
                 work: work)
@@ -85,11 +85,19 @@ public extension Later {
 public extension Later {
     @discardableResult
     static func main(withDelay delay: UInt32 = 0,
-                     work: @escaping () -> Void) -> LaterValue<Void> {
+                     work: @escaping () throws -> Void) -> LaterValue<Void> {
         Later.do(withDelay: delay) {
-            DispatchQueue.main.async {
-                work()
+            promise { promise in
+                DispatchQueue.main.async {
+                    do {
+                        try work()
+                        promise.succeed(())
+                    } catch {
+                        promise.fail(error)
+                    }
+                }
             }
+            
         }
     }
 }
@@ -119,8 +127,13 @@ public extension Later {
 
 // MARK: post
 
+public struct LaterPostError: Error {
+    let error: Error
+    let response: URLResponse?
+}
+
 public extension Later {
-    static func post(url: URL, withData data: () -> Data) -> LaterValue<(Data?, URLResponse?, Error?)> {
+    static func post(url: URL, withData data: () -> Data) -> LaterValue<(Data?, URLResponse?)> {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.httpBody = data()
@@ -131,7 +144,11 @@ public extension Later {
         return Later.default.ev.promise { promise in
             URLSession.shared
                 .dataTask(with: request) { (data, response, error) in
-                    promise.succeed((data, response, error))
+                    if let error = error {
+                        promise.fail(LaterPostError(error: error,
+                                                    response: response))
+                    }
+                    promise.succeed((data, response))
             }
             .resume()
         }
