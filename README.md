@@ -162,7 +162,7 @@ Later
 #### when
 ```swift
 Later
-    .do { print("Do Somthing") }
+    .do { print("Do Something") }
     .when { event in
         event
             .whenComplete { _ in
