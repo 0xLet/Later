@@ -1,57 +1,119 @@
 import XCTest
-import NIO
 
 @testable import Later
 
 final class LaterTests: XCTestCase {
-    func testExample() {
+    func testLaterPromise_success() throws {
         let sema = DispatchSemaphore(value: 0)
         
-        print("System cores: \(System.coreCount)")
-        let group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
-        let ev = group.next()
-        
-        let promise = ev.promise { (promise) in
-            sleep(10)
-            sema.signal()
+        let promise = Later.promise { (promise) in
+            sleep(5)
             promise.succeed(())
         }
         
         promise.whenSuccess { page in
-            print("Page received")
+            XCTAssert(true)
         }
-        
         
         promise.whenFailure { error in
-            print("Error: \(error)")
+            XCTAssert(false)
         }
         
-        var spam = true
+        promise.whenComplete { result in
+            sema.signal()
+        }
         
-        let result = ev.do(withDelay: 5) {
-            spam = false
+        sema.wait()
+    }
+    
+    func testLaterPromise_failure() throws {
+        let sema = DispatchSemaphore(value: 0)
+        
+        let promise = Later.promise { (promise) in
+            sleep(5)
+            promise.fail(NSError(domain: "Later", code: -1, userInfo: nil))
+        }
+        
+        promise.whenSuccess { page in
+            XCTAssert(false)
+        }
+        
+        promise.whenFailure { error in
+            XCTAssert(true)
+        }
+        
+        promise.whenComplete { result in
+            sema.signal()
+        }
+        
+        sema.wait()
+    }
+    
+    func testLaterDo_success() throws {
+        let sema = DispatchSemaphore(value: 0)
+        
+        let result = Later.do(withDelay: 5) {
             print("Hello World!")
         }
         
-        print("First")
-        
-        while spam {
-            sleep(1)
-            print("Spam!")
+        result.whenSuccess { _ in
+            XCTAssert(true)
         }
         
-        ev.do {
-            print("last?")
+        result.whenFailure { error in
+            XCTAssert(false)
         }
         
-        print("Waiting for Promise...")
+        result.whenComplete { result in
+            sema.signal()
+        }
         
         sema.wait()
+    }
+    
+    func testLaterDo_failure() throws {
+        let sema = DispatchSemaphore(value: 0)
         
-        try! group.syncShutdownGracefully()
+        let result = Later.do(withDelay: 5) {
+            throw NSError(domain: "Later", code: -1, userInfo: nil)
+        }
+        
+        result.whenSuccess { _ in
+            XCTAssert(false)
+        }
+        
+        result.whenFailure { error in
+            XCTAssert(true)
+        }
+        
+        result.whenComplete { result in
+            sema.signal()
+        }
+        
+        sema.wait()
     }
     
     func testFetch() {
+        let sema = DispatchSemaphore(value: 0)
+        
+        let fetchRequest = Later.fetch(url: URL(string: "https://avatars0.githubusercontent.com/u/8268288?s=460&u=2cb09673ea7f5230fa929b9b14a438cb2a65751c&v=4")!)
+        
+        fetchRequest.whenSuccess { (data, response, error) in
+            XCTAssert(true)
+        }
+        
+        fetchRequest.whenFailure { (error) in
+            XCTAssert(false)
+        }
+        
+        fetchRequest.whenComplete { (result) in
+            sema.signal()
+        }
+        
+        sema.wait()
+    }
+    
+    func testPost_success() {
         let sema = DispatchSemaphore(value: 0)
         
         Later.post(url: URL(string: "https://postman-echo.com/post")!) {
@@ -60,124 +122,43 @@ final class LaterTests: XCTestCase {
         .when { (future) in
             future
                 .whenFailure { (error) in
-                    print("Error 😬 \(error)")
+                    XCTAssert(false)
             }
             
             future
                 .whenSuccess { (data, reponse) in
-                    print("POST")
-                    print(String(data: data!, encoding: .utf8) ?? "-1")
-                    print(reponse)
-                    print("END")
+                    XCTAssert(true)
+            }
+            
+            future.whenComplete { result in
+                sema.signal()
             }
         }
-        
-        
-        
-        Later.do(withDelay: 2) {
-            Later.fetch(url: URL(string: "https://avatars0.githubusercontent.com/u/10639145?s=200&v=4")!, work:  { (data, response, error) in
-                print(data)
-            })
-        }
-        
-        var spam = true
-        
-        Later.do(withDelay: 5) {
-            spam = false
-            print("Hello World!")
-        }.when { (future) in
-            print("H")
-            future
-                .whenSuccess { _ in
-                    print("Said Hello World!")
-                    sema.signal()
-            }
-        }
-        
-        print("First")
-        
-        Later.do {
-            while spam {
-                sleep(1)
-                print("Spam!")
-            }
-        }
-        
-        print("FETCH")
-        
-        Later.fetch(url: URL(string: "https://avatars0.githubusercontent.com/u/8268288?s=460&u=2cb09673ea7f5230fa929b9b14a438cb2a65751c&v=4")!) { (data, response, error) in
-            print(response)
-        }
-        
         
         sema.wait()
     }
     
-    func testDo() {
-        Later.do(withDelay: 2) {
-            "Hello World"
-        }
-        .whenSuccess {
-            print($0)
-        }
-        
-        sleep(3)
-        
-        print("end")
-    }
-    
-    func test100Do() {
+    func testPost_failure() {
         let sema = DispatchSemaphore(value: 0)
         
-        var count = 0
-        var maxCount = 0
-        
-        let start = Date().timeIntervalSince1970
-        for i in 0 ..< 100 {
-            if count > maxCount {
-                maxCount = count
-            }
-            Later.do {
-                count += 1
-                sleep(3)
-                count -= 1
-                if i == 99 {
+        Later.post(url: URL(string: "localhost")!)
+            .when { (future) in
+                future
+                    .whenFailure { (error) in
+                        XCTAssert(true)
+                }
+                
+                future
+                    .whenSuccess { (data, reponse) in
+                        XCTAssert(false)
+                }
+                
+                future.whenComplete { result in
                     sema.signal()
                 }
-            }
         }
+        
         sema.wait()
-        let end = Date().timeIntervalSince1970
-        
-        print(maxCount)
-        print(end - start)
-    }
-    
-    func test1000Do() {
-        let sema = DispatchSemaphore(value: 0)
-        
-        var count = 0
-        var maxCount = 0
-        
-        let start = Date().timeIntervalSince1970
-        for i in 0 ..< 1000 {
-            if count > maxCount {
-                maxCount = count
-            }
-            Later.do {
-                count += 1
-                sleep(3)
-                count -= 1
-                if i == 999 {
-                    sema.signal()
-                }
-            }
-        }
-        sema.wait()
-        let end = Date().timeIntervalSince1970
-        
-        print(maxCount)
-        print(end - start) // 1000 / 80 * 3 ~= 37.5
     }
     
     func testWhen() {
@@ -227,12 +208,12 @@ final class LaterTests: XCTestCase {
         let sema = DispatchSemaphore(value: 0)
         
         Later.scheduleRepeatedTask(initialDelay: .seconds(0),
-                       delay: .seconds(1)) { (task) in
-            Later.do(withDelay: 4) {
-                task.cancel()
-                sema.signal()
-            }
-            count += 1
+                                   delay: .seconds(1)) { (task) in
+                                    Later.do(withDelay: 4) {
+                                        task.cancel()
+                                        sema.signal()
+                                    }
+                                    count += 1
         }
         Later.scheduleTask(in: .seconds(3)) {
             count += 1
@@ -243,11 +224,13 @@ final class LaterTests: XCTestCase {
     }
     
     static var allTests = [
-        ("testExample", testExample),
+        ("testLaterPromise_success", testLaterPromise_success),
+        ("testLaterPromise_failure", testLaterPromise_failure),
+        ("testLaterDo_success", testLaterDo_success),
+        ("testLaterDo_failure", testLaterDo_failure),
         ("testFetch", testFetch),
-        ("testDo", testDo),
-        ("test100Do", test100Do),
-        ("test1000Do", test1000Do),
+        ("testPost_success", testPost_success),
+        ("testPost_failure", testPost_failure),
         ("testWhen", testWhen),
         ("testSchedule", testSchedule)
     ]

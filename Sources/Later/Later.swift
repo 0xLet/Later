@@ -133,10 +133,10 @@ public struct LaterPostError: Error {
 }
 
 public extension Later {
-    static func post(url: URL, withData data: () -> Data) -> LaterValue<(Data?, URLResponse?)> {
+    static func post(url: URL, withData data: (() -> Data)? = nil) -> LaterValue<(Data?, URLResponse?)> {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.httpBody = data()
+        request.httpBody = data?()
         request.allHTTPHeaderFields = [
             "Content-Type": "application/json; charset=utf-8"
         ]
