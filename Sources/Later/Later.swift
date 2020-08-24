@@ -104,8 +104,23 @@ public extension Later {
             
         }
     }
+    
+    @discardableResult
+    static func main<T>(withDelay delay: UInt32 = 0,
+                        work: @escaping () throws -> T) -> LaterValue<T> {
+        promise { promise in
+            sleep(delay)
+            DispatchQueue.main.async {
+                do {
+                    let view = try work()
+                    promise.succeed(view)
+                } catch {
+                    promise.fail(error)
+                }
+            }
+        }
+    }
 }
-
 
 // MARK: schedule
 
