@@ -1,10 +1,3 @@
-//
-//  EventLoopTests.swift
-//  LaterTests
-//
-//  Created by CRi on 8/13/20.
-//
-
 import XCTest
 import NIO
 
