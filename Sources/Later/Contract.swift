@@ -36,6 +36,10 @@ public class Contract<Value> {
     }
     
     public func resign() {
+        guard isValid else {
+            return
+        }
+        
         isValid = false
         
         onResign?(value)
