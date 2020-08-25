@@ -3,6 +3,24 @@ import XCTest
 @testable import Later
 
 class ContractTests: XCTestCase {
+    func testContractInitialValue() {
+        let sema = DispatchSemaphore(value: 0)
+        let contract = Contract(initialValue: "Hello, World!")
+            .onChange { value in
+                XCTAssertEqual(value, "Hello, World!")
+                sema.signal()
+            }
+            .onResign { lastValue in
+                XCTAssertEqual(lastValue, "Hello, World!")
+            }
+        
+        sema.wait()
+        
+        contract.resign()
+        
+        XCTAssertNil(contract.value)
+    }
+    
     func testContractCount() {
         let sema = DispatchSemaphore(value: 0)
         var count = 0
