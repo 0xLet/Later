@@ -210,3 +210,39 @@ public extension Later {
         }
     }
 }
+
+
+public class Contract<Value> {
+    private var promise: LaterPromise<Value?>?
+    
+    private var onChange: ((Value?) -> Void)?
+    
+    public var value: Value? {
+        didSet {
+            promise?.succeed(value)
+            start()
+        }
+    }
+    
+    public init(initialValue: Value? = nil, onChangeHandler: ((Value?) -> Void)? = nil) {
+        onChange = onChangeHandler
+        start()
+        value = initialValue
+    }
+    
+    @discardableResult
+    public func set(onChangeHandler: ((Value?) -> Void)? = nil) -> Self {
+        onChange = onChangeHandler
+        
+        return self
+    }
+    
+    private func start() {
+        Later.promise { (promise) in
+            self.promise = promise
+        }
+        .whenSuccess { [weak self] (value) in
+            self?.onChange?(value)
+        }
+    }
+}
