@@ -252,37 +252,6 @@ final class LaterTests: XCTestCase {
         sema.wait()
     }
     
-    func testContract() {
-        let sema = DispatchSemaphore(value: 0)
-        let countContract = Contract(initialValue: 0) { (value) in
-            XCTAssert(((value?.isMultiple(of: 2)) != nil))
-        }
-        let contract = Contract(initialValue: "Hello, World!") { _ in
-            if (countContract.value ?? 0) > 8 {
-                sema.signal()
-                return
-            }
-            
-            countContract.value? += 2
-        }
-        
-        contract.value = "...?"
-        
-        contract.value = "0"
-        
-        contract.value = "1"
-        
-        contract.value = "2"
-        
-        contract.value = "3"
-        
-        contract.value = "4"
-        
-        sema.wait()
-        
-        XCTAssertEqual(countContract.value ?? 0, 7)
-    }
-    
     static var allTests = [
         ("testLaterPromise_success", testLaterPromise_success),
         ("testLaterPromise_failure", testLaterPromise_failure),
