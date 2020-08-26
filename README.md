@@ -78,6 +78,22 @@ and: Later.Type { Later.self }
 when(value: @escaping (LaterValue<Value>) -> Void) -> Later.Type
 ```
 
+## Contract
+
+```swift
+public class Contract<Value> {
+    public init(initialValue: Value? = nil,
+                onResignHandler: ((Value?) -> Void)? = nil,
+                onChangeHandler: ((Value?) -> Void)? = nil) {
+        onResign = onResignHandler
+        onChange = onChangeHandler
+        value = initialValue
+        start()
+        promise?.succeed(value)
+    }
+}
+```
+
 ****
 
 ## Examples
@@ -170,6 +186,26 @@ Later
         }
     }
     .do { print("Do Something Else") }
+```
+
+### Contract
+```swift
+let textContract = Contract<String>()
+let label = Label("❗️👀")
+    
+textContract
+    .onChange { value in
+        Later.main { [weak self] in
+            self?.label.text = value
+        }
+}
+.onResign { lastValue in
+    Later.main { [weak self] in
+        self?.label.text = "Contract was Resigned\nLast Value: \(lastValue ?? "-1")"
+    }
+}
+
+textContract.value = "Hello, World!"
 ```
 
 ### promise + fetch
