@@ -1,4 +1,8 @@
 public class Contract<Value> {
+    public enum ContractError: Error {
+        case resigned
+    }
+    
     private var isValid = true
     private var promise: LaterPromise<Value?>?
     
@@ -43,6 +47,7 @@ public class Contract<Value> {
         isValid = false
         
         onResign?(value)
+        promise?.fail(ContractError.resigned)
         
         promise = nil
         onChange = nil
