@@ -40,10 +40,10 @@ public class Later {
         }
     }
     
-    private static var `default`: Later = Later()
+    internal static var `default`: Later = Later()
     
     private let group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
-    private var ev: EventLoop {
+    internal var ev: EventLoop {
         group.next()
     }
 }
