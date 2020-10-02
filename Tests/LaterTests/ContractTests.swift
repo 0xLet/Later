@@ -14,6 +14,10 @@ class ContractTests: XCTestCase {
                 XCTAssertEqual(lastValue, "Hello, World!")
             }
         
+        Later.do(withDelay: 3) {
+            contract.value = "!"
+        }
+        
         sema.wait()
         
         contract.resign()
@@ -24,7 +28,7 @@ class ContractTests: XCTestCase {
     func testContractCount() {
         let sema = DispatchSemaphore(value: 0)
         var count = 0
-        let contract = Contract(initialValue: "Hello, World!") { _ in
+        let contract = Contract(initialValue: "Hello, World!", onChangeHandler:  { _ in
             print("\tCount: \(count)")
             
             if count >= 8 {
@@ -33,7 +37,7 @@ class ContractTests: XCTestCase {
             }
             
             count += 2
-        }
+        })
         
         let task = Later.scheduleRepeatedTask(initialDelay: .seconds(3), delay: .milliseconds(100)) { (task) in
             contract.value = "Some Value"
@@ -54,11 +58,11 @@ class ContractTests: XCTestCase {
     
     func testContractContract() {
         let sema = DispatchSemaphore(value: 0)
-        let countContract = Contract(initialValue: 0) { (value) in
+        let countContract = Contract(initialValue: 0, onChangeHandler:  { (value) in
             print("New Value: \(value ?? -1)")
             XCTAssert(((value?.isMultiple(of: 2)) != nil))
-        }
-        let contract = Contract(initialValue: "Hello, World!") { _ in
+        })
+        let contract = Contract(initialValue: "Hello, World!", onChangeHandler:  { _ in
             print("\tCount: \(countContract.value ?? -1)")
             
             if (countContract.value ?? -1) >= 16 {
@@ -67,7 +71,7 @@ class ContractTests: XCTestCase {
             }
             
             countContract.value! += 2
-        }
+        })
         
         let task = Later.scheduleRepeatedTask(delay: .milliseconds(100)) { (task) in
             contract.value = "Some Value"
