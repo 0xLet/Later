@@ -6,16 +6,15 @@ class ContractTests: XCTestCase {
     func testContractInitialValue() {
         let sema = DispatchSemaphore(value: 0)
         let contract = Contract(initialValue: "Hello, World!")
-            .onChange { value in
-                XCTAssertEqual(value, "Hello, World!")
-                sema.signal()
-            }
-            .onResign { lastValue in
-                XCTAssertEqual(lastValue, "Hello, World!")
-            }
         
-        Later.do(withDelay: 3) {
-            contract.value = "!"
+        sleep(1)
+        
+        contract.onChange { value in
+            XCTAssertEqual(value, "Hello, World!")
+            sema.signal()
+        }
+        .onResign { lastValue in
+            XCTAssertEqual(lastValue, "Hello, World!")
         }
         
         sema.wait()

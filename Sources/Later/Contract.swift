@@ -28,6 +28,7 @@ public class Contract<Value> {
     @discardableResult
     public func onChange(onChangeHandler: ((Value?) -> Void)? = nil) -> Self {
         onChange = onChangeHandler
+        onChange?(value)
         
         return self
     }
